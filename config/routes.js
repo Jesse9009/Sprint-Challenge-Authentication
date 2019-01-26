@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const db = require('../database/dbConfig');
+const secret = process.env.JWT_SECRET;
 
 const { authenticate } = require('../auth/authenticate');
 
@@ -29,9 +30,12 @@ function register(req, res) {
   db('users')
     .insert(user)
     .then(id => {
+      console.log(id);
       db('users')
-        .where({ id })
+        .where({ username: user.username })
+        .first()
         .then(user => {
+          console.log(user);
           const token = generateToken(user);
           res.status(201).json({ id: user.id, token });
         });
@@ -45,8 +49,10 @@ function login(req, res) {
   const creds = req.body;
   db('users')
     .where({ username: creds.username })
+    .first()
     .then(user => {
       if (user && bcrypt.compareSync(creds.password, user.password)) {
+        console.log(user);
         const token = generateToken(user);
         res.json({ id: user.id, token });
       } else {
@@ -56,7 +62,7 @@ function login(req, res) {
       }
     })
     .catch(err => {
-      res.status(500).send(err);
+      res.status(500).json(err);
     });
 }
 
